@@ -6,8 +6,8 @@ import random
 
 class Hex:
 
-    def __init__(self, map, row, column, rows=5):
-        self.map = map
+    def __init__(self, tui, row, column, rows=5):
+        self.tui = tui
         self.row = row
         self.column = column
         self.rows = rows
@@ -52,8 +52,19 @@ class Hex:
         scr.addstr(row + 4, col + 1, "+-----+")
 
 
-class Map:
-    def __init__(self, scr, rows=5, columns=5):
+class TUI:
+    def __init__(self, scr, rows=0, columns=0):
+        self.scr = scr
+        self.scr.clear()
+
+        screen_rows, screen_cols = scr.getmaxyx()
+
+        if rows == 0:
+            rows = (screen_rows - 2) // 4
+
+        if columns == 0:
+            columns = (screen_cols - 2) // 8
+
         self.rows = rows
         self.columns = columns
         self.hex = []
@@ -69,7 +80,7 @@ class Map:
             self.hex.append(hex_row)
             row += 1
 
-    def draw(self, scr):
+    def draw(self):
         row = 0
         column = 0
 
@@ -80,8 +91,8 @@ class Map:
                     row_offset = 0
                 else:
                     row_offset = 2
-                self.hex[row][column].draw(scr, (row * (5-1)) + row_offset,
-                                           column * (9-1) + 1)
+                self.hex[row][column].draw(self.scr, (row * (5-1)) +
+                                           row_offset, column * (9-1) + 1)
                 column += 1
             row += 1
 
@@ -111,9 +122,8 @@ def main(stdscr):
     MAGENTA = curses.color_pair(6)
     CYAN_BLUE = curses.color_pair(9)
 
-    stdscr.clear()
-    map = Map(stdscr, 10, 21)
-    map.draw(stdscr)
+    ui = TUI(stdscr)
+    ui.draw()
     stdscr.refresh()
     stdscr.getch()
 
