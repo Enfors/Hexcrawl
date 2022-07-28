@@ -5,6 +5,7 @@ import random
 
 
 class Hex:
+
     def __init__(self, map, row, column, rows=5):
         self.map = map
         self.row = row
@@ -12,36 +13,43 @@ class Hex:
         self.rows = rows
         self.columns = rows * 2 - 1
 
+        rand = random.randint(0, 2)
+        if rand == 0:
+            self.terrain = "F"
+            self.color = GREEN
+        elif rand == 1:
+            self.terrain = "."
+            self.color = YELLOW
+        elif rand == 2:
+            self.terrain = "~"
+            self.color = CYAN
+
     def draw(self, scr, row, col):
-        scr.addstr(row, col, "+-------+")
+
+        # First (top) row_off
+        scr.addstr(row, col + 1, "+-----+")
         middle = (self.columns - 1) // 2
         scr.addstr(row, col + middle, ",", WHITE)
-        # x = col, y = row
         x_str = str(self.column + 1)
         x_str_len = len(x_str)
         scr.addstr(row, col + middle - x_str_len, x_str, BLUE)
         scr.addstr(row, col + middle + 1, str(self.row + 1), BLUE)
-        scr.addstr
-        y = 1
 
-        terrain = random.randint(0, 2)
+        # Second row
+        scr.addstr(row + 1, col, "/", WHITE)
+        scr.addstr(row + 1, col + 1, self.terrain * 7, self.color)
+        scr.addstr(row + 1, col + 8, "\\", WHITE)
+        # Third (middle) row
+        scr.addstr(row + 2, col - 1, "+", WHITE)
+        scr.addstr(row + 2, col, self.terrain * 9, self.color)
+        scr.addstr(row + 2, col + 9, "+", WHITE)
+        # Fourth row
+        scr.addstr(row + 3, col, "\\", WHITE)
+        scr.addstr(row + 3, col + 1, self.terrain * 7, self.color)
 
-        while y < self.rows - 1:  # for each row of the hex except the last one
-            char = "|"
-            if y == (self.rows - 1) / 2:  # if middle row
-                char = "+"
-            scr.addstr(row + y, col, char)
-            scr.addstr(row + y, col + self.columns - 1, char)
-            # scr.addstr(row + y, col + self.columns + 2, str(y))
-            if terrain == 0:
-                scr.addstr(row + y, col + 1, "FFFFFFF", GREEN)
-            if terrain == 1:
-                scr.addstr(row + y, col + 1, ".......", YELLOW)
-            if terrain == 2:
-                scr.addstr(row + y, col + 1, "~~~~~~~", CYAN_BLUE)
-            y += 1
-
-        scr.addstr(row + y, col, "+-------+")
+        scr.addstr(row + 3, col + 8, "/", WHITE)
+        # Fifth row
+        scr.addstr(row + 4, col + 1, "+-----+")
 
 
 class Map:
@@ -72,7 +80,8 @@ class Map:
                     row_offset = 0
                 else:
                     row_offset = 2
-                self.hex[row][column].draw(scr, (row * (5-1)) + row_offset, column * (9-1))
+                self.hex[row][column].draw(scr, (row * (5-1)) + row_offset,
+                                           column * (9-1) + 1)
                 column += 1
             row += 1
 
@@ -103,7 +112,6 @@ def main(stdscr):
     CYAN_BLUE = curses.color_pair(9)
 
     stdscr.clear()
-    stdscr.addstr("Hey there", BLUE)
     map = Map(stdscr, 10, 21)
     map.draw(stdscr)
     stdscr.refresh()
