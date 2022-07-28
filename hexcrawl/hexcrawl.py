@@ -53,7 +53,7 @@ class Hex:
 
 
 class TUI:
-    def __init__(self, scr, rows=50, columns=50):
+    def __init__(self, scr, rows=20, columns=30):
         self.scr = scr
         self.rows = rows
         self.columns = columns
@@ -61,19 +61,21 @@ class TUI:
 
         self.setup_screen_size()
 
-        self.setup_pad(rows, columns)
+        self.setup_pad(rows, columns, self.screen_rows, self.screen_columns)
         self.setup_hexes()
 
     def setup_screen_size(self):
         self.screen_rows, self.screen_columns = self.scr.getmaxyx()
-        # self.scr.addstr(f"screen_rows: {self.screen_rows}, screen_columns: {self.screen_columns}")
-        # self.scr.getch()
         self.row_pos = 0
         self.column_pos = 0
 
-    def setup_pad(self, rows, columns):
-        self.pad = curses.newpad(rows * 5 + 2, columns * 8 + 3)
-        #self.pad = curses.newpad(500, 500)
+    def setup_pad(self, rows, columns, display_rows, display_columns):
+        self.pad_rows = rows * 4 + 3
+        self.pad_columns = columns * 8 + 3
+        self.pad_display_rows = display_rows
+        self.pad_display_columns = display_columns
+        self.pad = curses.newpad(self.pad_rows, self.pad_columns)
+        self.pad.keypad(True)
 
     def setup_hexes(self):
         self.hex = []
@@ -102,10 +104,36 @@ class TUI:
                                            row_offset, column * (9-1) + 1)
                 column += 1
             row += 1
-        self.pad.refresh(self.row_pos, self.column_pos, 0, 0,
-                         self.screen_rows - 1, self.screen_columns - 1)
-        # self.pad.refresh(0, 0, 5, 5, 20, 20)
-        self.pad.getch()
+
+    def normalize_pos(self):
+        if self.column_pos < 0:
+            self.column_pos = 0
+        elif self.column_pos > self.pad_columns - self.pad_display_columns:
+            self.column_pos = self.pad_columns - self.pad_display_columns
+        if self.row_pos < 0:
+            self.row_pos = 0
+        elif self.row_pos > self.pad_rows - self.pad_display_rows:
+            self.row_pos = self.pad_rows - self.pad_display_rows
+
+    def main_loop(self):
+        while True:
+            self.pad.refresh(self.row_pos, self.column_pos, 0, 0,
+                             self.screen_rows - 1, self.screen_columns - 1)
+
+            key = self.pad.getch()
+
+            if key == curses.KEY_LEFT:
+                self.column_pos -= 2
+            elif key == curses.KEY_RIGHT:
+                self.column_pos += 2
+            elif key == curses.KEY_DOWN:
+                self.row_pos += 1
+            elif key == curses.KEY_UP:
+                self.row_pos -= 1
+            elif key == ord('q'):
+                return True
+
+            self.normalize_pos()
 
 
 def main(stdscr):
@@ -135,6 +163,7 @@ def main(stdscr):
 
     ui = TUI(stdscr)
     ui.draw()
+    ui.main_loop()
     stdscr.refresh()
 
 
