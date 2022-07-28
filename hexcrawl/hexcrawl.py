@@ -53,22 +53,30 @@ class Hex:
 
 
 class TUI:
-    def __init__(self, scr, rows=0, columns=0):
+    def __init__(self, scr, rows=50, columns=50):
         self.scr = scr
-        self.scr.clear()
-
-        screen_rows, screen_cols = scr.getmaxyx()
-
-        if rows == 0:
-            rows = (screen_rows - 2) // 4
-
-        if columns == 0:
-            columns = (screen_cols - 2) // 8
-
         self.rows = rows
         self.columns = columns
-        self.hex = []
+        self.scr.clear()
 
+        self.setup_screen_size()
+
+        self.setup_pad(rows, columns)
+        self.setup_hexes()
+
+    def setup_screen_size(self):
+        self.screen_rows, self.screen_columns = self.scr.getmaxyx()
+        # self.scr.addstr(f"screen_rows: {self.screen_rows}, screen_columns: {self.screen_columns}")
+        # self.scr.getch()
+        self.row_pos = 0
+        self.column_pos = 0
+
+    def setup_pad(self, rows, columns):
+        self.pad = curses.newpad(rows * 5 + 2, columns * 8 + 3)
+        #self.pad = curses.newpad(500, 500)
+
+    def setup_hexes(self):
+        self.hex = []
         row = 0
 
         while row < self.rows:
@@ -83,7 +91,6 @@ class TUI:
     def draw(self):
         row = 0
         column = 0
-
         while row < self.rows:
             column = 0
             while column < self.columns:
@@ -91,10 +98,14 @@ class TUI:
                     row_offset = 0
                 else:
                     row_offset = 2
-                self.hex[row][column].draw(self.scr, (row * (5-1)) +
+                self.hex[row][column].draw(self.pad, (row * (5-1)) +
                                            row_offset, column * (9-1) + 1)
                 column += 1
             row += 1
+        self.pad.refresh(self.row_pos, self.column_pos, 0, 0,
+                         self.screen_rows - 1, self.screen_columns - 1)
+        # self.pad.refresh(0, 0, 5, 5, 20, 20)
+        self.pad.getch()
 
 
 def main(stdscr):
@@ -125,7 +136,6 @@ def main(stdscr):
     ui = TUI(stdscr)
     ui.draw()
     stdscr.refresh()
-    stdscr.getch()
 
 
 curses.wrapper(main)
