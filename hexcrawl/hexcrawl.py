@@ -13,16 +13,16 @@ class Hex:
         self.rows = rows
         self.columns = rows * 2 - 1
 
-        rand = random.randint(0, 2)
-        if rand == 0:
+        rand = random.randint(1, 6)
+        if rand <= 3:
             self.terrain = "F"
             self.color = GREEN
-        elif rand == 1:
+        elif rand == 4 or rand == 5:
             self.terrain = "."
             self.color = YELLOW
-        elif rand == 2:
+        elif rand == 6:
             self.terrain = "~"
-            self.color = CYAN
+            self.color = BLUE
 
     def draw(self, scr, row, col):
 
@@ -32,8 +32,8 @@ class Hex:
         scr.addstr(row, col + middle, ",", WHITE)
         x_str = str(self.column + 1)
         x_str_len = len(x_str)
-        scr.addstr(row, col + middle - x_str_len, x_str, BLUE)
-        scr.addstr(row, col + middle + 1, str(self.row + 1), BLUE)
+        scr.addstr(row, col + middle - x_str_len, x_str, CYAN)
+        scr.addstr(row, col + middle + 1, str(self.row + 1), CYAN)
 
         # Second row
         scr.addstr(row + 1, col, "/", WHITE)
