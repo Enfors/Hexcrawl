@@ -3,6 +3,8 @@
 import curses
 import random
 
+LEGEND_ROWS = 8
+
 
 class Hex:
 
@@ -59,16 +61,21 @@ class TUI:
         self.columns = columns
         self.printed_before = False
         self.scr.clear()
-
         self.setup_screen_size()
-        self.setup_pad(rows, columns, self.screen_rows, self.screen_columns - 40 - 1)
-        self.setup_info(40)
+        self.setup_pad(rows, columns, self.screen_rows - 1,
+                       self.screen_columns - 40 - 1)
+        info_rows = self.screen_rows - LEGEND_ROWS
+        self.setup_info(info_rows, 40)
         self.setup_dividers()
         self.setup_hexes()
         self.print("1234567890" * 4)
         self.print("Welcome to Hexcrawl!")
         self.print("Setup complete.")
         self.print(f"Pad is {self.pad_display_columns} characters wide.")
+        self.print(f"{self.pad_display_columns}, {self.info_rows}")
+
+        # for i in range(50):
+        #     self.print(str(i))
 
     def setup_screen_size(self):
         self.screen_rows, self.screen_columns = self.scr.getmaxyx()
@@ -83,16 +90,56 @@ class TUI:
         self.pad = curses.newpad(self.pad_rows, self.pad_columns)
         self.pad.keypad(True)
 
-    def setup_info(self, columns):
+    def setup_info(self, rows, columns):
+        self.info_rows = rows
         self.info_columns = columns
-        self.info = curses.newwin(self.screen_rows, self.info_columns,
-                                  0,
+        self.info = curses.newwin(self.info_rows - 1, self.info_columns,
+                                  1,
                                   self.screen_columns - self.info_columns)
+        self.info.scrollok(True)
+
+    def setup_legend(self, rows, columns):
+        self.legend_rows = rows
+        self.legend_columns = columns
+        # self.legend = curses.newwin(self
 
     def setup_dividers(self):
+        # Vertical line
         for row in range(self.screen_rows):
             self.scr.addstr(row, self.pad_display_columns, "|", MAGENTA)
-            # self.scr.addstr(row, 39, "|", MAGENTA)
+
+        # Top of screen line
+        for column in range(0, self.screen_columns):
+            self.scr.addstr(0, column, "-", MAGENTA)
+
+        # Legend line
+        for column in range(self.pad_display_columns + 1,
+                            self.screen_columns):
+            self.scr.addstr(self.info_rows, column, "-", MAGENTA)
+
+        # World heading
+        title_column = self.pad_display_columns // 2 - 3
+        self.scr.addstr(0, title_column, "World", CYAN)
+        self.scr.addstr(0, title_column - 2, "[ ", MAGENTA)
+        self.scr.addstr(0, title_column + 5, " ]", MAGENTA)
+
+        # Info heading
+        title_column = self.screen_columns - self.info_columns // 2 - 2
+        self.scr.addstr(0, title_column, "Info", CYAN)
+        self.scr.addstr(0, title_column - 2, "[ ", MAGENTA)
+        self.scr.addstr(0, title_column + 4, " ]", MAGENTA)
+
+        # Legend heading
+        self.scr.addstr(self.info_rows, self.pad_display_columns + 16,
+                        " Legend ", CYAN)
+        self.scr.addstr(self.info_rows, self.pad_display_columns + 15,
+                        "[", MAGENTA)
+        self.scr.addstr(self.info_rows, self.pad_display_columns + 24,
+                        "]", MAGENTA)
+
+        # Pluses at intersections
+        self.scr.addstr(0, self.pad_display_columns, "+", MAGENTA)
+        self.scr.addstr(self.info_rows, self.pad_display_columns, "+", MAGENTA)
         self.scr.refresh()
 
     def setup_hexes(self):
@@ -135,7 +182,7 @@ class TUI:
 
     def main_loop(self):
         while True:
-            self.pad.refresh(self.row_pos, self.column_pos, 0, 0,
+            self.pad.refresh(self.row_pos, self.column_pos, 1, 0,
                              self.screen_rows - 1, self.screen_columns -
                              self.info_columns - 2)
 
