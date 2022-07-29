@@ -3,8 +3,9 @@
 import curses
 import random
 
+INFO_COLUMNS = 40
 LEGEND_ROWS = 8
-
+LEGEND_COLUMNS = INFO_COLUMNS
 
 class Hex:
 
@@ -66,6 +67,7 @@ class TUI:
                        self.screen_columns - 40 - 1)
         info_rows = self.screen_rows - LEGEND_ROWS
         self.setup_info(info_rows, 40)
+        self.setup_legend(LEGEND_ROWS, LEGEND_COLUMNS)
         self.setup_dividers()
         self.setup_hexes()
         self.print("1234567890" * 4)
@@ -73,9 +75,11 @@ class TUI:
         self.print("Setup complete.")
         self.print(f"Pad is {self.pad_display_columns} characters wide.")
         self.print(f"{self.pad_display_columns}, {self.info_rows}")
+        self.legend.addstr("Foo\nBar\nBaz")
+        self.legend.refresh()
 
-        # for i in range(50):
-        #     self.print(str(i))
+        for i in range(50):
+            self.print(str(i))
 
     def setup_screen_size(self):
         self.screen_rows, self.screen_columns = self.scr.getmaxyx()
@@ -93,7 +97,7 @@ class TUI:
     def setup_info(self, rows, columns):
         self.info_rows = rows
         self.info_columns = columns
-        self.info = curses.newwin(self.info_rows - 1, self.info_columns,
+        self.info = curses.newwin(self.info_rows - 2, self.info_columns,
                                   1,
                                   self.screen_columns - self.info_columns)
         self.info.scrollok(True)
@@ -101,7 +105,9 @@ class TUI:
     def setup_legend(self, rows, columns):
         self.legend_rows = rows
         self.legend_columns = columns
-        # self.legend = curses.newwin(self
+        self.legend = curses.newwin(rows, columns,
+                                    self.screen_rows - rows,
+                                    self.screen_columns - self.info_columns)
 
     def setup_dividers(self):
         # Vertical line
@@ -115,7 +121,7 @@ class TUI:
         # Legend line
         for column in range(self.pad_display_columns + 1,
                             self.screen_columns):
-            self.scr.addstr(self.info_rows, column, "-", MAGENTA)
+            self.scr.addstr(self.info_rows - 1, column, "-", MAGENTA)
 
         # World heading
         title_column = self.pad_display_columns // 2 - 3
@@ -130,16 +136,17 @@ class TUI:
         self.scr.addstr(0, title_column + 4, " ]", MAGENTA)
 
         # Legend heading
-        self.scr.addstr(self.info_rows, self.pad_display_columns + 16,
+        self.scr.addstr(self.info_rows - 1, self.pad_display_columns + 17,
                         " Legend ", CYAN)
-        self.scr.addstr(self.info_rows, self.pad_display_columns + 15,
+        self.scr.addstr(self.info_rows - 1, self.pad_display_columns + 16,
                         "[", MAGENTA)
-        self.scr.addstr(self.info_rows, self.pad_display_columns + 24,
+        self.scr.addstr(self.info_rows - 1, self.pad_display_columns + 25,
                         "]", MAGENTA)
 
         # Pluses at intersections
         self.scr.addstr(0, self.pad_display_columns, "+", MAGENTA)
-        self.scr.addstr(self.info_rows, self.pad_display_columns, "+", MAGENTA)
+        self.scr.addstr(self.info_rows - 1, self.pad_display_columns, "+",
+                        MAGENTA)
         self.scr.refresh()
 
     def setup_hexes(self):
