@@ -57,12 +57,18 @@ class TUI:
         self.scr = scr
         self.rows = rows
         self.columns = columns
+        self.printed_before = False
         self.scr.clear()
 
         self.setup_screen_size()
-
-        self.setup_pad(rows, columns, self.screen_rows, self.screen_columns)
+        self.setup_pad(rows, columns, self.screen_rows, self.screen_columns - 40 - 1)
+        self.setup_info(40)
+        self.setup_dividers()
         self.setup_hexes()
+        self.print("1234567890" * 4)
+        self.print("Welcome to Hexcrawl!")
+        self.print("Setup complete.")
+        self.print(f"Pad is {self.pad_display_columns} characters wide.")
 
     def setup_screen_size(self):
         self.screen_rows, self.screen_columns = self.scr.getmaxyx()
@@ -76,6 +82,18 @@ class TUI:
         self.pad_display_columns = display_columns
         self.pad = curses.newpad(self.pad_rows, self.pad_columns)
         self.pad.keypad(True)
+
+    def setup_info(self, columns):
+        self.info_columns = columns
+        self.info = curses.newwin(self.screen_rows, self.info_columns,
+                                  0,
+                                  self.screen_columns - self.info_columns)
+
+    def setup_dividers(self):
+        for row in range(self.screen_rows):
+            self.scr.addstr(row, self.pad_display_columns, "|", MAGENTA)
+            # self.scr.addstr(row, 39, "|", MAGENTA)
+        self.scr.refresh()
 
     def setup_hexes(self):
         self.hex = []
@@ -118,7 +136,8 @@ class TUI:
     def main_loop(self):
         while True:
             self.pad.refresh(self.row_pos, self.column_pos, 0, 0,
-                             self.screen_rows - 1, self.screen_columns - 1)
+                             self.screen_rows - 1, self.screen_columns -
+                             self.info_columns - 2)
 
             key = self.pad.getch()
 
@@ -134,6 +153,14 @@ class TUI:
                 return True
 
             self.normalize_pos()
+
+    def print(self, text):
+        if self.printed_before:
+            text = "\n" + text
+        self.info.addstr(text)
+        self.info.refresh()
+        if len(text) % self.info_columns != 0:
+            self.printed_before = True
 
 
 def main(stdscr):
