@@ -7,6 +7,7 @@ INFO_COLUMNS = 40
 LEGEND_ROWS = 8
 LEGEND_COLUMNS = INFO_COLUMNS
 
+
 class Hex:
 
     def __init__(self, tui, row, column, rows=5):
@@ -46,6 +47,8 @@ class Hex:
         scr.addstr(row + 2, col - 1, "+", WHITE)
         scr.addstr(row + 2, col, self.terrain * 9, self.color)
         scr.addstr(row + 2, col + 9, "+", WHITE)
+        if random.randint(1, 10) == 1 and self.terrain != "~":
+            scr.addstr(row + 2, col + 4, "#", WHITE)
         # Fourth row
         scr.addstr(row + 3, col, "\\", WHITE)
         scr.addstr(row + 3, col + 1, self.terrain * 7, self.color)
@@ -74,12 +77,11 @@ class TUI:
         self.print("Welcome to Hexcrawl!")
         self.print("Setup complete.")
         self.print(f"Pad is {self.pad_display_columns} characters wide.")
-        self.print(f"{self.pad_display_columns}, {self.info_rows}")
-        self.legend.addstr("Foo\nBar\nBaz")
+        self.legend.addstr("Use arrow keys to scroll the map.")
         self.legend.refresh()
 
-        for i in range(50):
-            self.print(str(i))
+        # for i in range(50):
+        #     self.print(str(i))
 
     def setup_screen_size(self):
         self.screen_rows, self.screen_columns = self.scr.getmaxyx()
@@ -125,19 +127,19 @@ class TUI:
 
         # World heading
         title_column = self.pad_display_columns // 2 - 3
-        self.scr.addstr(0, title_column, "World", CYAN)
+        self.scr.addstr(0, title_column, "World", GREEN)
         self.scr.addstr(0, title_column - 2, "[ ", MAGENTA)
         self.scr.addstr(0, title_column + 5, " ]", MAGENTA)
 
         # Info heading
         title_column = self.screen_columns - self.info_columns // 2 - 2
-        self.scr.addstr(0, title_column, "Info", CYAN)
+        self.scr.addstr(0, title_column, "Info", GREEN)
         self.scr.addstr(0, title_column - 2, "[ ", MAGENTA)
         self.scr.addstr(0, title_column + 4, " ]", MAGENTA)
 
         # Legend heading
         self.scr.addstr(self.info_rows - 1, self.pad_display_columns + 17,
-                        " Legend ", CYAN)
+                        " Legend ", GREEN)
         self.scr.addstr(self.info_rows - 1, self.pad_display_columns + 16,
                         "[", MAGENTA)
         self.scr.addstr(self.info_rows - 1, self.pad_display_columns + 25,
@@ -224,6 +226,7 @@ def main(stdscr):
     curses.init_pair(4, curses.COLOR_GREEN, curses.COLOR_BLACK)
     curses.init_pair(5, curses.COLOR_YELLOW, curses.COLOR_BLACK)
     curses.init_pair(6, curses.COLOR_MAGENTA, curses.COLOR_BLACK)
+    curses.init_pair(7, curses.COLOR_RED, curses.COLOR_BLACK)
     curses.init_pair(9, curses.COLOR_CYAN, curses.COLOR_BLUE)
 
     global WHITE
@@ -232,6 +235,7 @@ def main(stdscr):
     global GREEN
     global YELLOW
     global MAGENTA
+    global RED
     global CYAN_BLUE
 
     WHITE = curses.color_pair(1)
@@ -240,6 +244,7 @@ def main(stdscr):
     GREEN = curses.color_pair(4)
     YELLOW = curses.color_pair(5)
     MAGENTA = curses.color_pair(6)
+    RED = curses.color_pair(7)
     CYAN_BLUE = curses.color_pair(9)
 
     ui = TUI(stdscr)
