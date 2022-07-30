@@ -18,6 +18,7 @@ class Hex:
         self.column = column
         self.rows = rows
         self.columns = rows * 2 - 1
+        self.name = f"{column},{row}"
 
         rand = random.randint(1, 6)
         if rand <= 3:
@@ -30,41 +31,61 @@ class Hex:
             self.terrain = "~"
             self.color = BLUE
 
-    def draw(self, scr, row, col):
+    def draw(self, scr, row=None, column=None, border_color=0):
+
+        if border_color == 0:
+            border_color = WHITE
+
+        if row is None:
+            row = self.row
+
+        if column is None:
+            column = self.column
+
+        if column % 2 == 0:
+            row_offset = 0
+        else:
+            row_offset = 2
+
+        row = row * 4 + row_offset
+        column = column * 8 + 1
 
         # First (top) row_off
-        scr.addstr(row, col + 1, "+-----+")
+        scr.addstr(row, column + 1, "+-----+", border_color)
         middle = (self.columns - 1) // 2
-        scr.addstr(row, col + middle, ",", WHITE)
+        scr.addstr(row, column + middle, ",", WHITE)
         x_str = str(self.column + 1)
         x_str_len = len(x_str)
-        scr.addstr(row, col + middle - x_str_len, x_str, CYAN)
-        scr.addstr(row, col + middle + 1, str(self.row + 1), CYAN)
+        scr.addstr(row, column + middle - x_str_len, x_str, CYAN)
+        scr.addstr(row, column + middle + 1, str(self.row + 1), CYAN)
 
         # Second row
-        scr.addstr(row + 1, col, "/", WHITE)
-        scr.addstr(row + 1, col + 1, self.terrain * 7, self.color)
-        scr.addstr(row + 1, col + 8, "\\", WHITE)
+        scr.addstr(row + 1, column, "/", border_color)
+        scr.addstr(row + 1, column + 1, self.terrain * 7, self.color)
+        scr.addstr(row + 1, column + 8, "\\", border_color)
         # Third (middle) row
-        scr.addstr(row + 2, col - 1, "+", WHITE)
-        scr.addstr(row + 2, col, self.terrain * 9, self.color)
-        scr.addstr(row + 2, col + 9, "+", WHITE)
+        scr.addstr(row + 2, column - 1, "+", border_color)
+        scr.addstr(row + 2, column, self.terrain * 9, self.color)
+        scr.addstr(row + 2, column + 9, "+", border_color)
         if random.randint(1, 10) == 1 and self.terrain != "~":
-            scr.addstr(row + 2, col + 4, "#", WHITE)
+            scr.addstr(row + 2, column + 4, "#", WHITE)
         # Fourth row
-        scr.addstr(row + 3, col, "\\", WHITE)
-        scr.addstr(row + 3, col + 1, self.terrain * 7, self.color)
+        scr.addstr(row + 3, column, "\\", border_color)
+        scr.addstr(row + 3, column + 1, self.terrain * 7, self.color)
 
-        scr.addstr(row + 3, col + 8, "/", WHITE)
+        scr.addstr(row + 3, column + 8, "/", border_color)
         # Fifth row
-        scr.addstr(row + 4, col + 1, "+-----+")
+        scr.addstr(row + 4, column + 1, "+-----+", border_color)
 
 
 class TUI:
+
     def __init__(self, scr, rows=20, columns=30):
         self.scr = scr
         self.rows = rows
         self.columns = columns
+        self.data = {}
+        self.data["selected_hex"] = None
         self.setup(rows, columns)
 
     def setup(self, rows=0, columns=0):
@@ -184,18 +205,57 @@ class TUI:
             self.hex.append(hex_row)
             row += 1
 
+    def get_adjacent_hexes(self, row, column):
+        hexes = []
+
+        for direction in ["up", "up_right", "down_right",
+                          "down", "down_left", "up_left"]:
+            hex = self.get_adjacent_hex(row, column, direction)
+            if hex:
+                hexes.append(hex)
+
+        return hexes
+
+    def get_adjacent_hex(self, row, column, direction):
+        row_mod = 0
+        column_mod = 0
+
+        if column % 2 != 0:
+            side_mod = 0
+        else:
+            side_mod = -1
+
+        if direction == "up":
+            row_mod = -1
+        elif direction == "up_right":
+            row_mod = side_mod
+            column_mod = 1
+        elif direction == "down_right":
+            row_mod = side_mod + 1
+            column_mod = 1
+        elif direction == "down":
+            row_mod = 1
+        elif direction == "down_left":
+            row_mod = side_mod + 1
+            column_mod = -1
+        elif direction == "up_left":
+            row_mod = side_mod
+            column_mod = -1
+        else:
+            self.print(f"get_adjacent_hex: illegal direction: {direction}")
+
+        try:
+            return self.hex[row + row_mod][column + column_mod]
+        except IndexError:
+            return None
+
     def draw(self):
         row = 0
         column = 0
         while row < self.rows:
             column = 0
             while column < self.columns:
-                if column % 2 == 0:
-                    row_offset = 0
-                else:
-                    row_offset = 2
-                self.hex[row][column].draw(self.pad, (row * (5-1)) +
-                                           row_offset, column * (9-1) + 1)
+                self.hex[row][column].draw(self.pad, row, column)
                 column += 1
             row += 1
 
@@ -233,6 +293,8 @@ class TUI:
                 self.setup()
                 self.scr.refresh()
                 self.print("Screen has been resized.")
+            elif key == ord("u"):
+                self.unselect_hex()
 
             self.normalize_pos()
 
@@ -249,6 +311,26 @@ class TUI:
 
             self.scr.getch()
             rows, columns = self.scr.getmaxyx()
+
+    def select_hex(self, row, column):
+        self.unselect_hex()
+
+        selected_hex = self.hex[row][column]
+
+        adjacent_hexes = self.get_adjacent_hexes(row, column)
+        for hex in adjacent_hexes:
+            hex.draw(self.pad, border_color=BLUE)
+
+        selected_hex.draw(self.pad, border_color=MAGENTA)
+
+        self.data["selected_hex"] = selected_hex
+
+    def unselect_hex(self):
+        unselected_hex = self.data["selected_hex"]
+        self.data["selected_hex"] = None
+        if not unselected_hex:
+            return
+        unselected_hex.draw(self.pad)  # Draw with default border_color = unselected.
 
     def print(self, text):
         if self.printed_before:
@@ -289,6 +371,7 @@ def main(stdscr):
 
     ui = TUI(stdscr)
     ui.draw()
+    ui.select_hex(19, 29)
     ui.main_loop()
     # stdscr.refresh()
 
