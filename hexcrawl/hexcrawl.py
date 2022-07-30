@@ -30,6 +30,10 @@ class Hex:
         elif rand == 6:
             self.terrain = "~"
             self.color = BLUE
+        if self.terrain != "~" and random.randint(1, 10) == 1:
+            self.town = True
+        else:
+            self.town = False
 
     def draw(self, scr, row=None, column=None, border_color=0):
 
@@ -67,7 +71,7 @@ class Hex:
         scr.addstr(row + 2, column - 1, "+", border_color)
         scr.addstr(row + 2, column, self.terrain * 9, self.color)
         scr.addstr(row + 2, column + 9, "+", border_color)
-        if random.randint(1, 10) == 1 and self.terrain != "~":
+        if self.town:
             scr.addstr(row + 2, column + 4, "#", WHITE)
         # Fourth row
         scr.addstr(row + 3, column, "\\", border_color)
@@ -109,7 +113,15 @@ class TUI:
         self.print(f"Screen size is {self.screen_rows} lines by "
                    f"{self.screen_columns} columns.")
         self.print(f"Pad is {self.pad_display_columns} characters wide.")
-        self.legend.addstr("Use arrow keys to scroll the map.")
+        #                   1234567890123456789012345678901234567890
+        self.legend.addstr("\n  Move selection        Scroll map\n")
+        self.legend.addstr("  ==============        ==========\n")
+        self.legend.addstr("     7  8  9            Use Arrow keys\n")
+        self.legend.addstr("      \\ | /             to scroll map.\n")
+        self.legend.addstr("    4 -   - 6\n")
+        self.legend.addstr("      / | \\\n")
+        self.legend.addstr("     1  2  3")
+        self.legend.addstr
         self.legend.refresh()
 
         # for i in range(50):
@@ -230,6 +242,8 @@ class TUI:
         elif direction == "up_right":
             row_mod = side_mod
             column_mod = 1
+        elif direction == "right":
+            column_mod = 1
         elif direction == "down_right":
             row_mod = side_mod + 1
             column_mod = 1
@@ -238,16 +252,22 @@ class TUI:
         elif direction == "down_left":
             row_mod = side_mod + 1
             column_mod = -1
+        elif direction == "left":
+            column_mod = -1
         elif direction == "up_left":
             row_mod = side_mod
             column_mod = -1
         else:
             self.print(f"get_adjacent_hex: illegal direction: {direction}")
 
-        try:
-            return self.hex[row + row_mod][column + column_mod]
-        except IndexError:
+        new_row = row + row_mod
+        new_column = column + column_mod
+
+        if new_row < 0 or new_row >= self.rows or \
+           new_column < 0 or new_column >= self.columns:
             return None
+
+        return self.hex[row + row_mod][column + column_mod]
 
     def draw(self):
         row = 0
@@ -285,6 +305,22 @@ class TUI:
                 self.row_pos += 1
             elif key == curses.KEY_UP:
                 self.row_pos -= 1
+            elif key == ord('8'):
+                self.move_selected("up")
+            elif key == ord('9'):
+                self.move_selected("up_right")
+            elif key == ord('6'):
+                self.move_selected("right")
+            elif key == ord('3'):
+                self.move_selected("down_right")
+            elif key == ord('2'):
+                self.move_selected("down")
+            elif key == ord('1'):
+                self.move_selected("down_left")
+            elif key == ord('4'):
+                self.move_selected("left")
+            elif key == ord('7'):
+                self.move_selected("up_left")
             elif key == ord('q'):
                 return True
             elif key == curses.KEY_RESIZE:
@@ -315,11 +351,14 @@ class TUI:
     def select_hex(self, row, column):
         self.unselect_hex()
 
-        selected_hex = self.hex[row][column]
+        try:
+            selected_hex = self.hex[row][column]
+        except IndexError:
+            return None
 
-        adjacent_hexes = self.get_adjacent_hexes(row, column)
-        for hex in adjacent_hexes:
-            hex.draw(self.pad, border_color=BLUE)
+        # adjacent_hexes = self.get_adjacent_hexes(row, column)
+        # for hex in adjacent_hexes:
+        #     hex.draw(self.pad, border_color=BLUE)
 
         selected_hex.draw(self.pad, border_color=MAGENTA)
 
@@ -331,6 +370,21 @@ class TUI:
         if not unselected_hex:
             return
         unselected_hex.draw(self.pad)  # Draw with default border_color = unselected.
+
+    def move_selected(self, direction):
+        old_selected = self.data["selected_hex"]
+
+        row = old_selected.row
+        column = old_selected.column
+
+        new_selected = self.get_adjacent_hex(row, column, direction)
+
+        if new_selected:
+            self.select_hex(new_selected.row, new_selected.column)
+            return True
+        else:
+            self.print("Trying to move off map.")
+            return False
 
     def print(self, text):
         if self.printed_before:
@@ -371,7 +425,7 @@ def main(stdscr):
 
     ui = TUI(stdscr)
     ui.draw()
-    ui.select_hex(19, 29)
+    ui.select_hex(2, 2)
     ui.main_loop()
     # stdscr.refresh()
 
