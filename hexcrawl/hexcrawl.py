@@ -6,6 +6,8 @@ import random
 INFO_COLUMNS = 40
 LEGEND_ROWS = 8
 LEGEND_COLUMNS = INFO_COLUMNS
+MIN_SCREEN_ROWS = 18
+MIN_SCREEN_COLUMNS = 67
 
 
 class Hex:
@@ -22,7 +24,7 @@ class Hex:
             self.terrain = "F"
             self.color = GREEN
         elif rand == 4 or rand == 5:
-            self.terrain = "."
+            self.terrain = "p"
             self.color = YELLOW
         elif rand == 6:
             self.terrain = "~"
@@ -63,6 +65,14 @@ class TUI:
         self.scr = scr
         self.rows = rows
         self.columns = columns
+        self.setup(rows, columns)
+
+    def setup(self, rows=0, columns=0):
+        self.verify_screen_size()
+        if rows == 0:
+            rows = self.rows
+        if columns == 0:
+            columns = self.columns
         self.printed_before = False
         self.scr.clear()
         self.setup_screen_size()
@@ -75,7 +85,8 @@ class TUI:
         self.setup_hexes()
         self.print("1234567890" * 4)
         self.print("Welcome to Hexcrawl!")
-        self.print("Setup complete.")
+        self.print(f"Screen size is {self.screen_rows} lines by "
+                   f"{self.screen_columns} columns.")
         self.print(f"Pad is {self.pad_display_columns} characters wide.")
         self.legend.addstr("Use arrow keys to scroll the map.")
         self.legend.refresh()
@@ -93,7 +104,16 @@ class TUI:
         self.pad_columns = columns * 8 + 3
         self.pad_display_rows = display_rows
         self.pad_display_columns = display_columns
-        self.pad = curses.newpad(self.pad_rows, self.pad_columns)
+        try:
+            # If the pad already exists, then we got here because we're
+            # resizing the screen. That requires explicit resizing of the
+            # pad - at least, it doesn't work for me to just recreate it.
+            if self.pad:
+                self.pad.resize(self.pad_rows, self.pad_columns)
+        except AttributeError:
+            # self.pad doesn't exist, so this is the first time we've
+            # run this function - create the pad.
+            self.pad = curses.newpad(self.pad_rows, self.pad_columns)
         self.pad.keypad(True)
 
     def setup_info(self, rows, columns):
@@ -207,8 +227,28 @@ class TUI:
                 self.row_pos -= 1
             elif key == ord('q'):
                 return True
+            elif key == curses.KEY_RESIZE:
+                self.verify_screen_size()
+                self.scr.clear()
+                self.setup()
+                self.scr.refresh()
+                self.print("Screen has been resized.")
 
             self.normalize_pos()
+
+    def verify_screen_size(self):
+        rows, columns = self.scr.getmaxyx()
+        while rows < MIN_SCREEN_ROWS or columns < MIN_SCREEN_COLUMNS:
+            self.scr.clear()
+            if rows < MIN_SCREEN_ROWS:
+                self.scr.addstr("Terminal is not tall enough. "
+                                "Make it taller.\n")
+            if columns < MIN_SCREEN_COLUMNS:
+                self.scr.addstr("Terminal is too narrow. "
+                                "Make it wider.\n")
+
+            self.scr.getch()
+            rows, columns = self.scr.getmaxyx()
 
     def print(self, text):
         if self.printed_before:
@@ -250,7 +290,7 @@ def main(stdscr):
     ui = TUI(stdscr)
     ui.draw()
     ui.main_loop()
-    stdscr.refresh()
+    # stdscr.refresh()
 
 
 curses.wrapper(main)
