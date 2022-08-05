@@ -125,6 +125,7 @@ class TUI:
         self.data = {}
         self.data["selected_hex"] = None
         self.setup(rows, columns)
+        self.setup_hexes()
 
     def setup(self, rows=0, columns=0):
         self.verify_screen_size()
@@ -141,7 +142,6 @@ class TUI:
         self.setup_info(info_rows, 40)
         self.setup_legend(LEGEND_ROWS, LEGEND_COLUMNS)
         self.setup_dividers()
-        self.setup_hexes()
         self.print("1234567890" * 4)
         self.print("Welcome to Hexcrawl!")
         self.print(f"Screen size is {self.screen_rows} lines by "
@@ -155,9 +155,8 @@ class TUI:
         self.legend.addstr("    4 -   - 6\n")
         self.legend.addstr("      / | \\\n")
         self.legend.addstr("     1  2  3")
-        self.legend.addstr
         self.legend.refresh()
-
+        self.info_dump()
         # for i in range(50):
         #     self.print(str(i))
 
@@ -441,6 +440,20 @@ class TUI:
         self.info.refresh()
         if len(text) % self.info_columns != 0:
             self.printed_before = True
+
+    def info_dump(self):
+        self.print(f"rows:                {self.rows:>3} hexagon rows")
+        self.print(f"columns:             {self.columns:>3} hexagon cols")
+        self.print(f"screen_rows:         {self.screen_rows>3}")
+        self.print(f"screen_columns:      {self.screen_columns:>3}")
+        self.print(f"row_pos:             {self.row_pos:>3}")
+        self.print(f"column_pos:          {self.column_pos:>3}")
+        self.print(f"pad_rows:            {self.pad_rows:>3}")
+        self.print(f"pad_columns:         {self.pad_columns:>3}")
+        self.print(f"pad_display_rows:    {self.pad_display_rows:>3}")
+        self.print(f"pad_display_columns: {self.pad_display_columns:>3}")
+        self.print(f"info_rows:           {self.info_rows:>3}")
+        self.print(f"info_columns:        {self.info_columns:>3}")
 
 
 def main(stdscr):
