@@ -25,7 +25,7 @@ class Hex:
             self.terrain = "F"
             self.color = GREEN
         elif rand == 4 or rand == 5:
-            self.terrain = "p"
+            self.terrain = "g"
             self.color = YELLOW
         elif rand == 6:
             self.terrain = "~"
@@ -80,6 +80,40 @@ class Hex:
         scr.addstr(row + 3, column + 8, "/", border_color)
         # Fifth row
         scr.addstr(row + 4, column + 1, "+-----+", border_color)
+
+        # if self.terrain == "F":
+        #     self.draw_forest(scr, row, column)
+        # if self.terrain == "g":
+        #     self.draw_grasslands(scr, row, column)
+
+    def draw_forest(self, scr, row, column):
+        for row_offset in range(1, 3):
+            for column_offset in range(1, 7):
+                if random.randint(1, 3) == 1:
+                    scr.addstr(row + row_offset, column + column_offset,
+                               "O", GREEN)
+                    scr.addstr(row + row_offset + 1, column + column_offset,
+                               "|", YELLOW)
+
+    def draw_grasslands(self, scr, row, column):
+        for row_offset in range(1, 4):
+            for column_offset in range(1, 7):
+                val = random.randint(1, 6)
+                if val == 1:
+                    scr.addstr(row + row_offset, column + column_offset,
+                               ".", YELLOW)
+                elif val == 2:
+                    scr.addstr(row + row_offset, column + column_offset,
+                               "|", GREEN)
+                elif val == 3:
+                    scr.addstr(row + row_offset, column + column_offset,
+                               "/", GREEN)
+                elif val == 4:
+                    scr.addstr(row + row_offset, column + column_offset,
+                               ":", GREEN)
+                elif val == 5:
+                    scr.addstr(row + row_offset, column + column_offset,
+                               ",", GREEN)
 
 
 class TUI:
@@ -370,6 +404,20 @@ class TUI:
         if not unselected_hex:
             return
         unselected_hex.draw(self.pad)  # Draw with default border_color = unselected.
+        row = unselected_hex.row
+        column = unselected_hex.column
+
+        # The hex below will have had its coordinates removed.
+        # Redraw that hex too, to get its coordinates back.
+        # This will happen over and over, so we have to redraw
+        # all hexes below.
+        hex_below = self.get_adjacent_hex(row, column, "down")
+        while hex_below:
+            hex_below.draw(self.pad)
+            row = hex_below.row
+            column = hex_below.column
+
+            hex_below = self.get_adjacent_hex(row, column, "down")
 
     def move_selected(self, direction):
         old_selected = self.data["selected_hex"]
@@ -404,6 +452,7 @@ def main(stdscr):
     curses.init_pair(6, curses.COLOR_MAGENTA, curses.COLOR_BLACK)
     curses.init_pair(7, curses.COLOR_RED, curses.COLOR_BLACK)
     curses.init_pair(9, curses.COLOR_CYAN, curses.COLOR_BLUE)
+    curses.init_pair(10, curses.COLOR_MAGENTA, curses.COLOR_WHITE)
 
     global WHITE
     global BLUE
@@ -413,6 +462,7 @@ def main(stdscr):
     global MAGENTA
     global RED
     global CYAN_BLUE
+    global MAGENTA_WHITE
 
     WHITE = curses.color_pair(1)
     BLUE = curses.color_pair(2)
@@ -422,6 +472,7 @@ def main(stdscr):
     MAGENTA = curses.color_pair(6)
     RED = curses.color_pair(7)
     CYAN_BLUE = curses.color_pair(9)
+    MAGENTA_WHITE = curses.color_pair(10)
 
     ui = TUI(stdscr)
     ui.draw()
