@@ -26,19 +26,15 @@ class Hex:
         self.columns = rows * 2 - 1
         self.name = f"{column},{row}"
         self.terrain = "."
-        self.color = WHITE
 
-        rand = random.randint(1, 7)
+        rand = random.randint(1, 6)
         if rand <= 3:
             self.terrain = "F"
-            self.color = GREEN
         elif rand == 4 or rand == 5:
             self.terrain = "g"
-            self.color = YELLOW
         elif rand == 6:
             self.terrain = "~"
-            self.color = BLUE
-        if self.terrain != "~" and random.randint(1, 10) == 1:
+        if self.terrain != "~" and random.randint(1, 12) == 1:
             self.town = True
         else:
             self.town = False
@@ -91,55 +87,47 @@ class Hex:
 
         # Second row
         scr.addstr(row + 1, column, "/", border_color)
-        scr.addstr(row + 1, column + 1, self.terrain * 7, self.color)
+        # scr.addstr(row + 1, column + 1, self.terrain * 7, self.color)
         scr.addstr(row + 1, column + 8, "\\", border_color)
         # Third (middle) row
         scr.addstr(row + 2, column - 1, "+", border_color)
-        scr.addstr(row + 2, column, self.terrain * 9, self.color)
+        # scr.addstr(row + 2, column, self.terrain * 9, self.color)
         scr.addstr(row + 2, column + 9, "+", border_color)
         if self.town:
             scr.addstr(row + 2, column + 4, "#", WHITE)
         # Fourth row
         scr.addstr(row + 3, column, "\\", border_color)
-        scr.addstr(row + 3, column + 1, self.terrain * 7, self.color)
+        # scr.addstr(row + 3, column + 1, self.terrain * 7, self.color)
 
         scr.addstr(row + 3, column + 8, "/", border_color)
         # Fifth row
         scr.addstr(row + 4, column + 1, "+-----+", border_color)
 
-        # if self.terrain == "F":
-        #     self.draw_forest(scr, row, column)
-        # if self.terrain == "g":
-        #     self.draw_grasslands(scr, row, column)
+        if self.terrain == "F":
+            self.draw_forest(scr, row, column)
+        elif self.terrain == "g":
+            self.draw_grasslands(scr, row, column)
+        elif self.terrain == "~":
+            self.draw_water(scr, row, column)
+        else:
+            self.draw_empty(scr, row, column)
+
+    def fill_hex(self, scr, row, column, filler, color):
+        for row_offset in range(1, 4):
+            scr.addstr(row + row_offset, column + 1, filler, color)
 
     def draw_forest(self, scr, row, column):
-        for row_offset in range(1, 3):
-            for column_offset in range(1, 7):
-                if random.randint(1, 3) == 1:
-                    scr.addstr(row + row_offset, column + column_offset,
-                               "O", GREEN)
-                    scr.addstr(row + row_offset + 1, column + column_offset,
-                               "|", YELLOW)
+        self.fill_hex(scr, row, column, "FFFFFFF", GREEN)
 
     def draw_grasslands(self, scr, row, column):
-        for row_offset in range(1, 4):
-            for column_offset in range(1, 7):
-                val = random.randint(1, 6)
-                if val == 1:
-                    scr.addstr(row + row_offset, column + column_offset,
-                               ".", YELLOW)
-                elif val == 2:
-                    scr.addstr(row + row_offset, column + column_offset,
-                               "|", GREEN)
-                elif val == 3:
-                    scr.addstr(row + row_offset, column + column_offset,
-                               "/", GREEN)
-                elif val == 4:
-                    scr.addstr(row + row_offset, column + column_offset,
-                               ":", GREEN)
-                elif val == 5:
-                    scr.addstr(row + row_offset, column + column_offset,
-                               ",", GREEN)
+        self.fill_hex(scr, row, column, "ggggggg", YELLOW)
+
+    def draw_water(self, scr, row, column):
+        self.fill_hex(scr, row, column, "~~~~~~~", BLUE)
+
+    def draw_empty(self, scr, row, column):
+        for row_offset in range(1, 4, 2):
+            scr.addstr(row + row_offset, column + 2, ".   .", WHITE)
 
 
 class TUI:
@@ -538,7 +526,6 @@ class TUI:
             self.select_hex(new_selected.row, new_selected.column)
             return True
         else:
-            self.print("Trying to move off map.")
             return False
 
     def goto(self, row, column):
