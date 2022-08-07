@@ -372,30 +372,32 @@ class TUI:
     def scroll_to_selected_hex(self):
         sel_hex = self.get_selected_hex()
         rel_row, rel_column = self.get_hex_screen_relative_pos(sel_hex)
+        done = False
 
-        while rel_row < SCROLL_MIN_THRESHOLD and self.row_pos > 0:
-            self.row_pos -= 1
-            rel_row, rel_column = self.get_hex_screen_relative_pos(sel_hex)
-            self.refresh_pad()
-            time.sleep(0.03)
+        while not done:
+            done = True
+            if rel_row < SCROLL_MIN_THRESHOLD and self.row_pos > 0:
+                done = False
+                self.row_pos -= 1
+                rel_row, rel_column = self.get_hex_screen_relative_pos(sel_hex)
 
-        while rel_row > SCROLL_MAX_THRESHOLD and self.row_pos < self.pad_rows - self.pad_display_rows:
-            self.row_pos += 1
-            rel_row, rel_column = self.get_hex_screen_relative_pos(sel_hex)
-            self.refresh_pad()
-            time.sleep(0.03)
+            if rel_row > SCROLL_MAX_THRESHOLD and self.row_pos < self.pad_rows - self.pad_display_rows:
+                done = False
+                self.row_pos += 1
+                rel_row, rel_column = self.get_hex_screen_relative_pos(sel_hex)
 
-        while rel_column < SCROLL_MIN_THRESHOLD and self.column_pos > 0:
-            self.column_pos -= 1
-            rel_row, rel_column = self.get_hex_screen_relative_pos(sel_hex)
-            self.refresh_pad()
-            time.sleep(0.015)
+            if rel_column < SCROLL_MIN_THRESHOLD and self.column_pos > 0:
+                done = False
+                self.column_pos -= 1
+                rel_row, rel_column = self.get_hex_screen_relative_pos(sel_hex)
 
-        while rel_column > SCROLL_MAX_THRESHOLD and self.column_pos < self.pad_columns - self.pad_display_columns:
-            self.column_pos += 1
-            rel_row, rel_column = self.get_hex_screen_relative_pos(sel_hex)
+            if rel_column > SCROLL_MAX_THRESHOLD and self.column_pos < self.pad_columns - self.pad_display_columns:
+                done = False
+                self.column_pos += 1
+                rel_row, rel_column = self.get_hex_screen_relative_pos(sel_hex)
+
             self.refresh_pad()
-            time.sleep(0.015)
+            time.sleep(0.02)
 
     def refresh_pad(self):
         self.pad.refresh(self.row_pos, self.column_pos, 1, 0,
