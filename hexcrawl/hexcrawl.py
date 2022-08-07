@@ -2,6 +2,7 @@
 
 import curses
 import random
+import time
 
 INFO_COLUMNS = 40
 LEGEND_ROWS = 8
@@ -10,6 +11,10 @@ MIN_SCREEN_ROWS = 18
 MIN_SCREEN_COLUMNS = 67
 SCROLL_MIN_THRESHOLD = 25
 SCROLL_MAX_THRESHOLD = 75
+
+
+#class UIPart
+
 
 class Hex:
 
@@ -20,8 +25,10 @@ class Hex:
         self.rows = rows
         self.columns = rows * 2 - 1
         self.name = f"{column},{row}"
+        self.terrain = "."
+        self.color = WHITE
 
-        rand = random.randint(1, 6)
+        rand = random.randint(1, 7)
         if rand <= 3:
             self.terrain = "F"
             self.color = GREEN
@@ -369,24 +376,35 @@ class TUI:
         while rel_row < SCROLL_MIN_THRESHOLD and self.row_pos > 0:
             self.row_pos -= 1
             rel_row, rel_column = self.get_hex_screen_relative_pos(sel_hex)
+            self.refresh_pad()
+            time.sleep(0.03)
 
         while rel_row > SCROLL_MAX_THRESHOLD and self.row_pos < self.pad_rows - self.pad_display_rows:
             self.row_pos += 1
             rel_row, rel_column = self.get_hex_screen_relative_pos(sel_hex)
+            self.refresh_pad()
+            time.sleep(0.03)
 
         while rel_column < SCROLL_MIN_THRESHOLD and self.column_pos > 0:
             self.column_pos -= 1
             rel_row, rel_column = self.get_hex_screen_relative_pos(sel_hex)
+            self.refresh_pad()
+            time.sleep(0.015)
 
         while rel_column > SCROLL_MAX_THRESHOLD and self.column_pos < self.pad_columns - self.pad_display_columns:
             self.column_pos += 1
             rel_row, rel_column = self.get_hex_screen_relative_pos(sel_hex)
+            self.refresh_pad()
+            time.sleep(0.015)
+
+    def refresh_pad(self):
+        self.pad.refresh(self.row_pos, self.column_pos, 1, 0,
+                         self.screen_rows - 1, self.screen_columns -
+                         self.info_columns - 2)
 
     def main_loop(self):
         while True:
-            self.pad.refresh(self.row_pos, self.column_pos, 1, 0,
-                             self.screen_rows - 1, self.screen_columns -
-                             self.info_columns - 2)
+            self.refresh_pad()
 
             key = self.pad.getch()
 
