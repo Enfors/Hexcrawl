@@ -8,7 +8,8 @@ LEGEND_ROWS = 8
 LEGEND_COLUMNS = INFO_COLUMNS
 MIN_SCREEN_ROWS = 18
 MIN_SCREEN_COLUMNS = 67
-
+SCROLL_MIN_THRESHOLD = 25
+SCROLL_MAX_THRESHOLD = 75
 
 class Hex:
 
@@ -35,7 +36,25 @@ class Hex:
         else:
             self.town = False
 
+    def get_pos(self):
+        if self.column % 2 == 0:
+            row_offset = 0
+        else:
+            row_offset = 2
+
+        row_pos = self.row * 4 + row_offset
+        column_pos = self.column * 8 + 1
+
+        return row_pos, column_pos
+
+    def get_center_pos(self):
+        row_pos, column_pos = self.get_pos()
+
+        return row_pos + 3, column_pos + 4
+
     def draw(self, scr, row=None, column=None, border_color=0):
+
+        # row, column = self.get_hex_pos(row, column)
 
         if border_color == 0:
             border_color = WHITE
@@ -152,7 +171,7 @@ class TUI:
         self.legend.addstr("  ==============        ==========\n")
         self.legend.addstr("     7  8  9            Use Arrow keys\n")
         self.legend.addstr("      \\ | /             to scroll map.\n")
-        self.legend.addstr("    4 -   - 6\n")
+        self.legend.addstr("    4 - 5 - 6\n")
         self.legend.addstr("      / | \\\n")
         self.legend.addstr("     1  2  3")
         self.legend.refresh()
@@ -250,6 +269,27 @@ class TUI:
             self.hex.append(hex_row)
             row += 1
 
+    def get_hex_pos(self, row, column):
+        """
+        Return the top left character position of the hex in row,column format.
+        """
+        if column % 2 == 0:
+            row_offset = 0
+        else:
+            row_offset = 2
+
+        row_pos = row * 4 + row_offset
+        column_pos = column * 8 + 1
+
+        return row_pos, column_pos
+
+    def get_hex_center_pos(self, row, column):
+        """
+        Return the center character position of the hex in row,column format.
+        """
+        row_pos, column_pos = self.get_hex_pos
+        return row_pos + 2, column_pos + 4
+
     def get_adjacent_hexes(self, row, column):
         hexes = []
 
@@ -322,6 +362,26 @@ class TUI:
         elif self.row_pos > self.pad_rows - self.pad_display_rows:
             self.row_pos = self.pad_rows - self.pad_display_rows
 
+    def scroll_to_selected_hex(self):
+        sel_hex = self.get_selected_hex()
+        rel_row, rel_column = self.get_hex_screen_relative_pos(sel_hex)
+
+        while rel_row < SCROLL_MIN_THRESHOLD and self.row_pos > 0:
+            self.row_pos -= 1
+            rel_row, rel_column = self.get_hex_screen_relative_pos(sel_hex)
+
+        while rel_row > SCROLL_MAX_THRESHOLD and self.row_pos < self.pad_rows - self.pad_display_rows:
+            self.row_pos += 1
+            rel_row, rel_column = self.get_hex_screen_relative_pos(sel_hex)
+
+        while rel_column < SCROLL_MIN_THRESHOLD and self.column_pos > 0:
+            self.column_pos -= 1
+            rel_row, rel_column = self.get_hex_screen_relative_pos(sel_hex)
+
+        while rel_column > SCROLL_MAX_THRESHOLD and self.column_pos < self.pad_columns - self.pad_display_columns:
+            self.column_pos += 1
+            rel_row, rel_column = self.get_hex_screen_relative_pos(sel_hex)
+
     def main_loop(self):
         while True:
             self.pad.refresh(self.row_pos, self.column_pos, 1, 0,
@@ -354,7 +414,9 @@ class TUI:
                 self.move_selected("left")
             elif key == ord('7'):
                 self.move_selected("up_left")
-            elif key == ord('q'):
+            elif key == ord('5'):
+                self.goto_and_center_on(*self.get_selected_hex_pos())
+            elif key == ord('q') or key == ord('Q'):
                 return True
             elif key == curses.KEY_RESIZE:
                 self.verify_screen_size()
@@ -364,8 +426,8 @@ class TUI:
                 self.print("Screen has been resized.")
             elif key == ord("u"):
                 self.unselect_hex()
-
             self.normalize_pos()
+            self.scroll_to_selected_hex()
 
     def verify_screen_size(self):
         rows, columns = self.scr.getmaxyx()
@@ -418,6 +480,32 @@ class TUI:
 
             hex_below = self.get_adjacent_hex(row, column, "down")
 
+    def get_selected_hex(self):
+        return self.data["selected_hex"]
+
+    def get_selected_hex_pos(self):
+        hex = self.get_selected_hex()
+
+        return hex.get_pos()
+
+    def get_selected_hex_center_pos(self):
+        hex = self.get_selected_hex()
+
+        return hex.get_center_pos()
+
+    def get_hex_screen_relative_pos(self, hex):
+        """
+        Get the relative position of the center of a hex. Relative
+        means a number from 0 (left or top) to 100 (right or bottom).
+        Returns relative_row, relative_column.
+        """
+        hex_row_pos, hex_column_pos = hex.get_center_pos()
+        relative_row = (hex_row_pos - self.row_pos) * 100 // \
+            self.pad_display_rows
+        relative_column = (hex_column_pos - self.column_pos) * 100 // \
+            self.pad_display_columns
+        return relative_row, relative_column
+
     def move_selected(self, direction):
         old_selected = self.data["selected_hex"]
 
@@ -432,6 +520,19 @@ class TUI:
         else:
             self.print("Trying to move off map.")
             return False
+
+    def goto(self, row, column):
+        self.row_pos = row
+        self.column_pos = column
+        self.normalize_pos()
+
+    def goto_and_center_on(self, row, column):
+        self.row_pos = row - self.pad_display_rows // 2 + 2
+        self.column_pos = column - self.pad_display_columns // 2 + 4
+        self.normalize_pos()
+
+    def goto_selected(self):
+        pass
 
     def print(self, text):
         if self.printed_before:
