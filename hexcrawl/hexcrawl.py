@@ -13,9 +13,6 @@ SCROLL_MIN_THRESHOLD = 25
 SCROLL_MAX_THRESHOLD = 75
 
 
-#class UIPart
-
-
 class Hex:
 
     def __init__(self, tui, row, column, rows=5):
@@ -128,6 +125,18 @@ class Hex:
     def draw_empty(self, scr, row, column):
         for row_offset in range(1, 4, 2):
             scr.addstr(row + row_offset, column + 2, ".   .", WHITE)
+
+
+class UILayer:
+    def __init__(self, legend):
+        self.legend = legend
+        pass
+
+    def print_legend(self, scr):
+        """
+        Print the legend of this layer. This function should be overridden.
+        """
+        scr.addstr("This layer has no print_legend function of its own.")
 
 
 class TUI:
