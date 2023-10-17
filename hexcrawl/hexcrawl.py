@@ -552,7 +552,7 @@ class TUI:
     def info_dump(self):
         self.print(f"rows:                {self.rows:>3} hexagon rows")
         self.print(f"columns:             {self.columns:>3} hexagon cols")
-        self.print(f"screen_rows:         {self.screen_rows>3}")
+        self.print(f"screen_rows:         {self.screen_rows:>3}")
         self.print(f"screen_columns:      {self.screen_columns:>3}")
         self.print(f"row_pos:             {self.row_pos:>3}")
         self.print(f"column_pos:          {self.column_pos:>3}")
